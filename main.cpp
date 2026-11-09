@@ -16,7 +16,7 @@
 
 #include <exception>
 #include "micmonitor.h"
- 
+
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     QCoreApplication::setApplicationName("QMicMonitor");
@@ -33,7 +33,7 @@ int main(int argc, char* argv[]) {
     }
 
     try {
-        MicMonitor widget(nullptr);
+        MicMonitor::Applet widget(nullptr);
         widget.hide();
         return app.exec();
     } catch(const std::exception & err) {

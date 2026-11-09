@@ -13,37 +13,77 @@
 
 #define MICMONITOR_VERSION 20261010
 
+#include <QMap>
 #include <QMenu>
+#include <QPixmap>
 #include <QWidget>
 #include <QAction>
 #include <QString>
 #include <QCloseEvent>
 #include <QSystemTrayIcon>
 
-namespace Ui {
-    class Settings;
+#include <pipewire/pipewire.h>
+#include <memory>
+
+namespace MicMonitor {
+    void pw_registry_destroy(pw_registry* ctx);
+
+    class PipeWire : public QObject {
+        Q_OBJECT
+
+        std::unique_ptr<pw_thread_loop, void(*)(pw_thread_loop*)> threadLoop = { nullptr, pw_thread_loop_destroy };
+        std::unique_ptr<pw_context, void(*)(pw_context*)> context = { nullptr, pw_context_destroy };
+        std::unique_ptr<pw_core, int(*)(pw_core*)> core = { nullptr, pw_core_disconnect };
+        std::unique_ptr<pw_registry, void(*)(pw_registry*)> registry = { nullptr, pw_registry_destroy };
+
+        struct spa_hook registryListener;
+
+      protected:
+        void listenLoopStart();
+
+      public:
+        PipeWire(QObject* parent = nullptr);
+        ~PipeWire();
+
+        bool isValid() const;
+
+        void onRegistryGlobal(uint32_t id, uint32_t permissions, const char* type, uint32_t version, const spa_dict* props);
+        void onRegistryGlobalRemove(uint32_t id);
+
+      signals:
+        void micListenOn(uint32_t id, const QString& app, const QString& path, const QString& pid);
+        void micListenOff(uint32_t id);
+    };
+
+    struct AppInfo {
+        QString name;
+        QString path;
+        QString pid;
+    };
+
+    class Applet : public QWidget {
+        Q_OBJECT
+
+        QSystemTrayIcon* trayIcon = nullptr;
+        QAction* actionSettings = nullptr;
+        QAction* actionExit = nullptr;
+
+        QPixmap pixon;
+        QPixmap pixof;
+
+        std::unique_ptr<PipeWire> mic;
+        QMap<uint32_t, AppInfo> apps;
+
+      public:
+        explicit Applet(QWidget* parent = nullptr);
+        ~Applet() = default;
+
+      private slots:
+        void closeProgram();
+        void iconActivated(QSystemTrayIcon::ActivationReason reason);
+        void listenAppAdded(uint32_t id, const QString& app, const QString& path, const QString& pid);
+        void listenAppRemoved(uint32_t id);
+    };
 }
-
-class MicMonitor : public QWidget {
-    Q_OBJECT
-
-    //Ui::Settings* ui = nullptr;
-    QSystemTrayIcon* trayIcon = nullptr;
-    QAction* actionSettings = nullptr;
-    QAction* actionExit = nullptr;
-
-  public:
-    explicit MicMonitor(QWidget *parent = 0);
-    ~MicMonitor();
-
-  protected:
-    void closeEvent(QCloseEvent*) override;
-    void showEvent(QShowEvent*) override;
-    void hideEvent(QHideEvent*) override;
-
-  private slots:
-    void iconActivated(QSystemTrayIcon::ActivationReason reason);
-    void exitProgram(void);
-};
 
 #endif // MICMONITOR_H
