@@ -37,26 +37,47 @@ namespace MicMonitor {
         .global_remove = registry_global_remove,
     };
 
+    class PwLockGuard {
+        pw_thread_loop* ctx;
+    public:
+        PwLockGuard(pw_thread_loop* ptr) : ctx(ptr) {
+            pw_thread_loop_lock(ctx);
+        }
+
+        ~PwLockGuard() {
+            pw_thread_loop_unlock(ctx);
+        }
+    };
+
     PipeWire::PipeWire(QObject* parent) : QObject(parent) {
         pw_init(nullptr, nullptr);
+
         threadLoop.reset(pw_thread_loop_new("micmonitor-loop", nullptr));
         if(!threadLoop) {
             throw std::runtime_error("pw_thread_loop is null");
         }
+
         context.reset(pw_context_new(pw_thread_loop_get_loop(threadLoop.get()), nullptr, 0));
+        if(! context) {
+            throw std::runtime_error("pw_context is null");
+        }
+
+        if(pw_thread_loop_start(threadLoop.get()) < 0) {
+            throw std::runtime_error("pw_thread_loop_start failed");
+        }
+
         listenLoopStart();
     }
 
     PipeWire::~PipeWire() {
         pw_thread_loop_stop(threadLoop.get());
-        pw_thread_loop_lock(threadLoop.get());
-
-        spa_hook_remove(&registryListener);
-
-        registry.reset();
-        core.reset();
-        context.reset();
-        pw_thread_loop_unlock(threadLoop.get());
+        {
+            const PwLockGuard guard(threadLoop.get());
+            spa_hook_remove(&registryListener);
+            registry.reset();
+            core.reset();
+            context.reset();
+        }
         threadLoop.reset(); 
         pw_deinit();
     }
@@ -66,33 +87,21 @@ namespace MicMonitor {
     }
 
     void PipeWire::listenLoopStart() {
-        if(! context) {
-            throw std::runtime_error("pw_context is null");
-        }
-
-        if(pw_thread_loop_start(threadLoop.get()) < 0) {
-            throw std::runtime_error("pw_thread_loop_start failed");
-        }
-    
-        pw_thread_loop_lock(threadLoop.get());
+        const PwLockGuard guard(threadLoop.get());
         core.reset(pw_context_connect(context.get(), nullptr, 0));
 
         if(! core) {
-            pw_thread_loop_unlock(threadLoop.get());
             throw std::runtime_error("pipewire service not found");
         }
 
         registry.reset(pw_core_get_registry(core.get(), PW_VERSION_REGISTRY, 0));
 
         if(! registry) {
-            pw_thread_loop_unlock(threadLoop.get());
             throw std::runtime_error("pw_registry failed");
         }
 
         spa_zero(registryListener);
-
         pw_registry_add_listener(registry.get(), & registryListener, & registryEvents, this);
-        pw_thread_loop_unlock(threadLoop.get());
     }
 
     void PipeWire::onRegistryGlobalRemove(uint32_t id) {
