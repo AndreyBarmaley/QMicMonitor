@@ -131,10 +131,17 @@ namespace MicMonitor {
         emit micListenOn(id, (app_name ? app_name : ""), (app_binary ? app_binary : ""), (app_pid ? app_pid : ""));
     }
 
+    void PipeWire::disconnectNode(uint32_t id) {
+        const PwLockGuard guard(threadLoop.get());
+        pw_registry_destroy(registry.get(), id);
+    }
+
     Applet::Applet(QWidget *parent) : QWidget(parent) {
-        actionSettings = new QAction("Settings", this);
+        actionHideUnused = new QAction("Hide unused", this);
         actionAbout = new QAction("About", this);
         actionExit = new QAction("Exit", this);
+
+        actionHideUnused->setCheckable(true);
 
         auto version = QString("%1 version: %2").arg(QCoreApplication::applicationName()).arg(QCoreApplication::applicationVersion());
 
@@ -144,11 +151,15 @@ namespace MicMonitor {
         connect(mic.get(), &PipeWire::micListenOff, this, &Applet::listenAppRemoved, Qt::QueuedConnection);
 
         QMenu* menu = new QMenu(this);
-        menu->addAction(actionSettings);
+        sectionApps = menu->addMenu("Apps");
+        menu->addSeparator();
+        menu->addAction(actionHideUnused);
         menu->addSeparator();
         menu->addAction(actionAbout);
         menu->addSeparator();
         menu->addAction(actionExit);
+
+        sectionApps->setDisabled(true);
 
         pixon = QPixmap(QString(":/icons/mic_on"));
         pixof = QPixmap(QString(":/icons/mic_off"));
@@ -158,7 +169,7 @@ namespace MicMonitor {
         trayIcon->setToolTip(version);
         trayIcon->setContextMenu(menu);
 
-        //connect(actionSettings, SIGNAL(triggered()), this, SLOT(show()));
+        connect(actionHideUnused, &QAction::toggled, this, &Applet::iconHideUnused);
         connect(actionExit, &QAction::triggered, this, &Applet::closeProgram);
         connect(actionAbout, &QAction::triggered, this, &Applet::aboutProgram);
         connect(trayIcon, &QSystemTrayIcon::activated, this, &Applet::iconActivated);
@@ -182,27 +193,59 @@ namespace MicMonitor {
         aboutBox.exec();
     }
 
+    void Applet::iconHideUnused(bool flag) {
+        if(sectionApps->actions().isEmpty()) {
+            trayIcon->setVisible(!flag);
+        }
+    }
+
     void Applet::iconActivated(QSystemTrayIcon::ActivationReason reason) {
         if(reason == QSystemTrayIcon::Trigger) {
         }
     }
 
     void Applet::listenAppAdded(uint32_t id, const QString& name, const QString& path, const QString& pid) {
-        apps.insert(id, AppInfo{name, path, pid});
         trayIcon->setIcon(pixon);
+        trayIcon->setVisible(true);
 
         auto tooltip = QString("%1 (%2, %3)").arg(name).arg(pid).arg(path);
         trayIcon->setToolTip(tooltip);
+
+        auto actionApp = new QAction(name);
+        actionApp->setCheckable(true);
+        actionApp->setChecked(true);
+        actionApp->setData(id);
+        connect(actionApp, &QAction::triggered, this, &Applet::appActionUnchecked);
+
+        sectionApps->addAction(actionApp);
+        sectionApps->setEnabled(true);
+    }
+
+    void Applet::appActionUnchecked() {
+        if(auto action = qobject_cast<QAction*>(sender())) {
+            uint32_t id = action->data().toUInt();
+            mic->disconnectNode(id);
+        }
     }
 
     void Applet::listenAppRemoved(uint32_t id) {
-        apps.remove(id);
+        for(auto action: sectionApps->actions()) {
+            if(action->data().toUInt() == id) {
+                delete action;
+                break;
+            }
+        }
 
-        if(apps.isEmpty()) {
+        if(sectionApps->actions().isEmpty()) {
+            sectionApps->setDisabled(true);
+
             trayIcon->setIcon(pixof);
+            trayIcon->setVisible(! actionHideUnused->isChecked());
 
             auto tooltip = QString("%1 version: %2").arg(QCoreApplication::applicationName()).arg(QCoreApplication::applicationVersion());
             trayIcon->setToolTip(tooltip);
+        } else {
+            sectionApps->setEnabled(true);
         }
     }
 }

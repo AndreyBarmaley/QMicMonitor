@@ -13,7 +13,6 @@
 
 #define MICMONITOR_VERSION 20261010
 
-#include <QMap>
 #include <QMenu>
 #include <QPixmap>
 #include <QWidget>
@@ -49,31 +48,26 @@ namespace MicMonitor {
 
         void onRegistryGlobal(uint32_t id, uint32_t permissions, const char* type, uint32_t version, const spa_dict* props);
         void onRegistryGlobalRemove(uint32_t id);
+        void disconnectNode(uint32_t);
 
       signals:
         void micListenOn(uint32_t id, const QString& app, const QString& path, const QString& pid);
         void micListenOff(uint32_t id);
     };
 
-    struct AppInfo {
-        QString name;
-        QString path;
-        QString pid;
-    };
-
     class Applet : public QWidget {
         Q_OBJECT
 
         QSystemTrayIcon* trayIcon = nullptr;
-        QAction* actionSettings = nullptr;
+        QAction* actionHideUnused = nullptr;
         QAction* actionAbout = nullptr;
         QAction* actionExit = nullptr;
+        QMenu* sectionApps = nullptr;
 
         QPixmap pixon;
         QPixmap pixof;
 
         std::unique_ptr<PipeWire> mic;
-        QMap<uint32_t, AppInfo> apps;
 
       public:
         explicit Applet(QWidget* parent = nullptr);
@@ -82,6 +76,8 @@ namespace MicMonitor {
       private slots:
         void closeProgram();
         void aboutProgram();
+        void appActionUnchecked();
+        void iconHideUnused(bool);
         void iconActivated(QSystemTrayIcon::ActivationReason reason);
         void listenAppAdded(uint32_t id, const QString& app, const QString& path, const QString& pid);
         void listenAppRemoved(uint32_t id);
