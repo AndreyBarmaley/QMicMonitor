@@ -15,12 +15,12 @@
 #include <QStandardPaths>
 
 #include <exception>
-#define VERSION 20261010
+#include "micmonitor.h"
  
 int main(int argc, char* argv[]) {
     QApplication app(argc, argv);
     QCoreApplication::setApplicationName("QMicMonitor");
-    QCoreApplication::setApplicationVersion(QString::number(VERSION));
+    QCoreApplication::setApplicationVersion(QString::number(MICMONITOR_VERSION));
 
     auto localData = QStandardPaths::writableLocation(QStandardPaths::AppLocalDataLocation);
     QDir().mkpath(localData);
@@ -33,9 +33,9 @@ int main(int argc, char* argv[]) {
     }
 
     try {
-        //MainSettings widget(configFile);
-        //widget.hide();
-        //return app.exec();
+        MicMonitor widget(nullptr);
+        widget.hide();
+        return app.exec();
     } catch(const std::exception & err) {
         qWarning() << err.what();
     }

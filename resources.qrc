@@ -1,6 +1,6 @@
 <RCC>
     <qresource prefix="/icons">
-        <file alias="za">icons/mic_on.png</file>
-        <file alias="zm">icons/mic_off.png</file>
+        <file alias="mic_on">icons/mic_on.png</file>
+        <file alias="mic_off">icons/mic_off.png</file>
     </qresource>
 </RCC>
