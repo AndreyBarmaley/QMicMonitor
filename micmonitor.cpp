@@ -140,8 +140,13 @@ namespace MicMonitor {
         actionHideUnused = new QAction("Hide unused", this);
         actionAbout = new QAction("About", this);
         actionExit = new QAction("Exit", this);
+        settings = new QSettings(QSettings::IniFormat, QSettings::UserScope, "IDC", "micmonitor", this);
 
         actionHideUnused->setCheckable(true);
+
+        if(settings->contains("hide_unused")) {
+            actionHideUnused->setCheckable(settings->value("hide_unused").toBool());
+        }
 
         auto version = QString("%1 version: %2").arg(QCoreApplication::applicationName()).arg(QCoreApplication::applicationVersion());
 
@@ -178,6 +183,7 @@ namespace MicMonitor {
     }
 
     void Applet::closeProgram() {
+        settings->setValue("hide_unused", actionHideUnused->isChecked());
         QCoreApplication::quit();
     }
 

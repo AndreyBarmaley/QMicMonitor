@@ -18,6 +18,7 @@
 #include <QWidget>
 #include <QAction>
 #include <QString>
+#include <QSettings>
 #include <QCloseEvent>
 #include <QSystemTrayIcon>
 
@@ -63,6 +64,7 @@ namespace MicMonitor {
         QAction* actionAbout = nullptr;
         QAction* actionExit = nullptr;
         QMenu* sectionApps = nullptr;
+        QSettings* settings = nullptr;
 
         QPixmap pixon;
         QPixmap pixof;
