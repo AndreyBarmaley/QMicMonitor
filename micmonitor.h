@@ -66,6 +66,7 @@ namespace MicMonitor {
 
         QSystemTrayIcon* trayIcon = nullptr;
         QAction* actionSettings = nullptr;
+        QAction* actionAbout = nullptr;
         QAction* actionExit = nullptr;
 
         QPixmap pixon;
@@ -80,6 +81,7 @@ namespace MicMonitor {
 
       private slots:
         void closeProgram();
+        void aboutProgram();
         void iconActivated(QSystemTrayIcon::ActivationReason reason);
         void listenAppAdded(uint32_t id, const QString& app, const QString& path, const QString& pid);
         void listenAppRemoved(uint32_t id);

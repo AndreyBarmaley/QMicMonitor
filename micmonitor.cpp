@@ -10,6 +10,7 @@
 
 #include <QIcon>
 #include <QDebug>
+#include <QMessageBox>
 #include <QApplication>
 
 #include "micmonitor.h"
@@ -132,13 +133,10 @@ namespace MicMonitor {
 
     Applet::Applet(QWidget *parent) : QWidget(parent) {
         actionSettings = new QAction("Settings", this);
+        actionAbout = new QAction("About", this);
         actionExit = new QAction("Exit", this);
 
         auto version = QString("%1 version: %2").arg(QCoreApplication::applicationName()).arg(QCoreApplication::applicationVersion());
-
-        //auto github = QString("https://github.com/AndreyBarmaley/QMicMonitor");
-        //                               "<p>Source code: <a href='%2'>%2</a></p>"
-        //                               "<p>Copyright © 2026 by Andrey Afletdinov <public.irkutsk@gmail.com></p>").arg(version).arg(github));
 
         mic = std::make_unique<PipeWire>();
 
@@ -147,6 +145,8 @@ namespace MicMonitor {
 
         QMenu* menu = new QMenu(this);
         menu->addAction(actionSettings);
+        menu->addSeparator();
+        menu->addAction(actionAbout);
         menu->addSeparator();
         menu->addAction(actionExit);
 
@@ -160,6 +160,7 @@ namespace MicMonitor {
 
         //connect(actionSettings, SIGNAL(triggered()), this, SLOT(show()));
         connect(actionExit, &QAction::triggered, this, &Applet::closeProgram);
+        connect(actionAbout, &QAction::triggered, this, &Applet::aboutProgram);
         connect(trayIcon, &QSystemTrayIcon::activated, this, &Applet::iconActivated);
 
         trayIcon->show();
@@ -167,6 +168,18 @@ namespace MicMonitor {
 
     void Applet::closeProgram() {
         QCoreApplication::quit();
+    }
+
+    void Applet::aboutProgram() {
+        auto github = QString("https://github.com/AndreyBarmaley/QMicMonitor");
+        QMessageBox aboutBox(this);
+        aboutBox.setWindowTitle("About MicMonitor");
+        aboutBox.setText(QString("<h3>%1 version: %2</h3>").
+            arg(QCoreApplication::applicationName()).arg(QCoreApplication::applicationVersion()));
+        aboutBox.setInformativeText(QString("<p>Source code: <a href='%1'>%2</a></p>"
+            "<p>Copyright © 2026 by Andrey Afletdinov <public.irkutsk@gmail.com></p>").arg(github).arg("GitHub"));
+        aboutBox.setStandardButtons(QMessageBox::Ok);
+        aboutBox.exec();
     }
 
     void Applet::iconActivated(QSystemTrayIcon::ActivationReason reason) {
