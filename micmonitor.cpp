@@ -144,10 +144,6 @@ namespace MicMonitor {
 
         actionHideUnused->setCheckable(true);
 
-        if(settings->contains("hide_unused")) {
-            actionHideUnused->setCheckable(settings->value("hide_unused").toBool());
-        }
-
         auto version = QString("%1 version: %2").arg(QCoreApplication::applicationName()).arg(QCoreApplication::applicationVersion());
 
         mic = std::make_unique<PipeWire>();
@@ -180,6 +176,11 @@ namespace MicMonitor {
         connect(trayIcon, &QSystemTrayIcon::activated, this, &Applet::iconActivated);
 
         trayIcon->show();
+
+        if(settings->contains("hide_unused")) {
+            actionHideUnused->setCheckable(settings->value("hide_unused").toBool());
+            trayIcon->hide();
+        }
     }
 
     void Applet::closeProgram() {
