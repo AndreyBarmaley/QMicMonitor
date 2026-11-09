@@ -6,7 +6,6 @@
 
 * **Real-time Microphone Tracking:** Leverages native PipeWire registry events for low-overhead audio stream detection.
 * **Process Identification:** Extracts and displays the Application Name, Node Name, and exact Process ID (PID) for every recording session.
-* **Target Application List:** Monitor specific applications (e.g., Chromium, Zoom, Telegram, OBS) or track everything.
 * **Custom Disconnect Actions:** Instantly execute custom C++ code, system alerts, or external bash scripts upon microphone disconnection.
 * **Qt5/Qt6 Ready:** Designed to integrate seamlessly into modern Linux desktop environments as a system tray icon or background daemon.
 
