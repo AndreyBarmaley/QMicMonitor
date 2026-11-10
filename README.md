@@ -18,6 +18,9 @@ To build and run **QMicMonitor**, you need a Linux system with PipeWire and the 
 2. When a target app starts using the microphone (registers a `Stream/Input/Audio` node), `QMicMonitor` captures its PID and name.
 3. Once the app releases the microphone or closes, the disconnect trigger fires immediately.
 
+### screenshot
+![screenshot](images/mic_applet.png)
+
 ## Acknowledgments
 
 * The [PipeWire](https://pipewire.org) team for their amazing modern multimedia framework.
