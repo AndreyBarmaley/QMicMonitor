@@ -177,13 +177,12 @@ namespace MicMonitor {
         QSystemTrayIcon::show();
 
         if(settings->contains("hide_unused")) {
-            actionHideUnused->setCheckable(settings->value("hide_unused").toBool());
+            actionHideUnused->setChecked(settings->value("hide_unused").toBool());
             QSystemTrayIcon::hide();
         }
     }
 
     void Applet::closeProgram() {
-        settings->setValue("hide_unused", actionHideUnused->isChecked());
         QCoreApplication::quit();
     }
 
@@ -203,6 +202,7 @@ namespace MicMonitor {
         if(sectionApps->actions().isEmpty()) {
             QSystemTrayIcon::setVisible(!flag);
         }
+        settings->setValue("hide_unused", actionHideUnused->isChecked());
     }
 
     void Applet::iconActivated(QSystemTrayIcon::ActivationReason reason) {
