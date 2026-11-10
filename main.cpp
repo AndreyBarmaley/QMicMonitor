@@ -33,8 +33,7 @@ int main(int argc, char* argv[]) {
     }
 
     try {
-        MicMonitor::Applet widget(nullptr);
-        widget.hide();
+        MicMonitor::Applet widget(&app);
         return app.exec();
     } catch(const std::exception & err) {
         qWarning() << err.what();

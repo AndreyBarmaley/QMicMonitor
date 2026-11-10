@@ -136,7 +136,7 @@ namespace MicMonitor {
         pw_registry_destroy(registry.get(), id);
     }
 
-    Applet::Applet(QWidget *parent) : QWidget(parent) {
+    Applet::Applet(QObject *parent) : QSystemTrayIcon(parent) {
         actionHideUnused = new QAction("Hide unused", this);
         actionAbout = new QAction("About", this);
         actionExit = new QAction("Exit", this);
@@ -147,11 +147,11 @@ namespace MicMonitor {
         auto version = QString("%1 version: %2").arg(QCoreApplication::applicationName()).arg(QCoreApplication::applicationVersion());
 
         mic = std::make_unique<PipeWire>();
+        menu = std::make_unique<QMenu>();
 
         connect(mic.get(), &PipeWire::micListenOn, this, &Applet::listenAppAdded, Qt::QueuedConnection);
         connect(mic.get(), &PipeWire::micListenOff, this, &Applet::listenAppRemoved, Qt::QueuedConnection);
 
-        QMenu* menu = new QMenu(this);
         sectionApps = menu->addMenu("Apps");
         menu->addSeparator();
         menu->addAction(actionHideUnused);
@@ -162,24 +162,23 @@ namespace MicMonitor {
 
         sectionApps->setDisabled(true);
 
-        pixon = QPixmap(QString(":/icons/mic_on"));
-        pixof = QPixmap(QString(":/icons/mic_off"));
+        pixon = new QPixmap(QString(":/icons/mic_on"));
+        pixof = new QPixmap(QString(":/icons/mic_off"));
 
-        trayIcon = new QSystemTrayIcon(this);
-        trayIcon->setIcon(pixof);
-        trayIcon->setToolTip(version);
-        trayIcon->setContextMenu(menu);
+        QSystemTrayIcon::setIcon(*pixof);
+        QSystemTrayIcon::setToolTip(version);
+        QSystemTrayIcon::setContextMenu(menu.get());
 
         connect(actionHideUnused, &QAction::toggled, this, &Applet::iconHideUnused);
         connect(actionExit, &QAction::triggered, this, &Applet::closeProgram);
         connect(actionAbout, &QAction::triggered, this, &Applet::aboutProgram);
-        connect(trayIcon, &QSystemTrayIcon::activated, this, &Applet::iconActivated);
+        connect(this, &QSystemTrayIcon::activated, this, &Applet::iconActivated);
 
-        trayIcon->show();
+        QSystemTrayIcon::show();
 
         if(settings->contains("hide_unused")) {
             actionHideUnused->setCheckable(settings->value("hide_unused").toBool());
-            trayIcon->hide();
+            QSystemTrayIcon::hide();
         }
     }
 
@@ -190,7 +189,7 @@ namespace MicMonitor {
 
     void Applet::aboutProgram() {
         auto github = QString("https://github.com/AndreyBarmaley/QMicMonitor");
-        QMessageBox aboutBox(this);
+        QMessageBox aboutBox;
         aboutBox.setWindowTitle("About MicMonitor");
         aboutBox.setText(QString("<h3>%1 version: %2</h3>").
             arg(QCoreApplication::applicationName()).arg(QCoreApplication::applicationVersion()));
@@ -202,7 +201,7 @@ namespace MicMonitor {
 
     void Applet::iconHideUnused(bool flag) {
         if(sectionApps->actions().isEmpty()) {
-            trayIcon->setVisible(!flag);
+            QSystemTrayIcon::setVisible(!flag);
         }
     }
 
@@ -212,11 +211,11 @@ namespace MicMonitor {
     }
 
     void Applet::listenAppAdded(uint32_t id, const QString& name, const QString& path, const QString& pid) {
-        trayIcon->setIcon(pixon);
-        trayIcon->setVisible(true);
+        QSystemTrayIcon::setIcon(*pixon);
+        QSystemTrayIcon::setVisible(true);
 
         auto tooltip = QString("%1 (%2, %3)").arg(name).arg(pid).arg(path);
-        trayIcon->setToolTip(tooltip);
+        QSystemTrayIcon::setToolTip(tooltip);
 
         auto actionApp = new QAction(name);
         actionApp->setCheckable(true);
@@ -246,11 +245,11 @@ namespace MicMonitor {
         if(sectionApps->actions().isEmpty()) {
             sectionApps->setDisabled(true);
 
-            trayIcon->setIcon(pixof);
-            trayIcon->setVisible(! actionHideUnused->isChecked());
+            QSystemTrayIcon::setIcon(*pixof);
+            QSystemTrayIcon::setVisible(! actionHideUnused->isChecked());
 
             auto tooltip = QString("%1 version: %2").arg(QCoreApplication::applicationName()).arg(QCoreApplication::applicationVersion());
-            trayIcon->setToolTip(tooltip);
+            QSystemTrayIcon::setToolTip(tooltip);
         } else {
             sectionApps->setEnabled(true);
         }

@@ -11,7 +11,7 @@
 #ifndef MICMONITOR_H
 #define MICMONITOR_H
 
-#define MICMONITOR_VERSION 20261010
+#define MICMONITOR_VERSION 20261110
 
 #include <QMenu>
 #include <QPixmap>
@@ -56,23 +56,22 @@ namespace MicMonitor {
         void micListenOff(uint32_t id);
     };
 
-    class Applet : public QWidget {
+    class Applet : public QSystemTrayIcon {
         Q_OBJECT
 
-        QSystemTrayIcon* trayIcon = nullptr;
         QAction* actionHideUnused = nullptr;
         QAction* actionAbout = nullptr;
         QAction* actionExit = nullptr;
         QMenu* sectionApps = nullptr;
         QSettings* settings = nullptr;
+        QPixmap* pixon = nullptr;
+        QPixmap* pixof = nullptr;
 
-        QPixmap pixon;
-        QPixmap pixof;
-
+        std::unique_ptr<QMenu> menu;
         std::unique_ptr<PipeWire> mic;
 
       public:
-        explicit Applet(QWidget* parent = nullptr);
+        explicit Applet(QObject* parent = nullptr);
         ~Applet() = default;
 
       private slots:
